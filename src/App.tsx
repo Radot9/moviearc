@@ -6,26 +6,32 @@ import MovieCard, { type Movie } from "./MovieCard";
 import MovieDetails from "./MovieDetails.tsx";
 
 const PROXY_BASE = import.meta.env.VITE_PROXY_BASE;
-
-const API_POPULAR = `${PROXY_BASE}?popular=1`;
-const API_SEARCH = `${PROXY_BASE}?query=`;
 const API_GENRES = `${PROXY_BASE}?genres=1`;
-
-// const movie = {
-//   genre_ids: [14, 28],
-//   popularity: 73.454,
-//   poster_path: "/gh4cZbhZxyTbgxQPxD0dOudNPTn.jpg",
-//   release_date: "2002-05-01",
-//   title: "Spider-Man",
-//   vote_average: 7.278,
-// };
 
 const Home = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [genreMap, setGenreMap] = useState<Record<number, string>>({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const buildMoviesUrl = (title: string) => {
+    const params = new URLSearchParams();
+    const trimmed = title.trim();
+
+    if (selectedGenre) params.set("genre", selectedGenre);
+    if (selectedYear) params.set("year", selectedYear);
+
+    if (trimmed) {
+      params.set("query", trimmed);
+    } else if (!selectedGenre && !selectedYear) {
+      params.set("popular", "1");
+    }
+
+    return `${PROXY_BASE}?${params.toString()}`;
+  };
 
   const getMovies = async (title: string) => {
     if (!PROXY_BASE) {
@@ -35,9 +41,7 @@ const Home = () => {
     setLoading(true);
     setError(null);
     try {
-      const url = title.trim()
-        ? `${API_SEARCH}${encodeURIComponent(title)}`
-        : API_POPULAR;
+      const url = buildMoviesUrl(title);
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch movies");
       const data = await response.json();
@@ -57,7 +61,7 @@ const Home = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_SEARCH}${encodeURIComponent(title)}`);
+      const response = await fetch(buildMoviesUrl(title));
       if (!response.ok) throw new Error("Failed to search movies");
       const data = await response.json();
       setMovies(data.results ?? []);
@@ -77,7 +81,7 @@ const Home = () => {
         setGenreMap(parsed);
         return;
       } catch {
-        // fallback to refetch
+        // ignore cache parse errors
       }
     }
     try {
@@ -105,20 +109,51 @@ const Home = () => {
   return (
     <>
       <h1 className="font-bold text-3xl text-center my-4">MovieArc</h1>
-      <div className="search flex bg-white py-2 px-4 rounded-full max-w-[400px] shadow-md mx-auto">
-        <input
-          className=" flex-1 focus:outline-0"
-          type="text"
-          placeholder="Search movie"
-          onChange={(e) => setSearchTerm(e.target.value)}
-          value={searchTerm}
-        />
-        <img
-          className="cursor-pointer"
-          src={SearchIcon}
-          alt="search-icon"
-          onClick={() => searchMovies(searchTerm)}
-        />
+      <div className="flex flex-col gap-3 items-center">
+        <div className="search flex bg-white py-2 px-4 rounded-full max-w-[420px] shadow-md w-full">
+          <input
+            className=" flex-1 focus:outline-0"
+            type="text"
+            placeholder="Search movie"
+            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchTerm}
+          />
+          <img
+            className="cursor-pointer"
+            src={SearchIcon}
+            alt="search-icon"
+            onClick={() => searchMovies(searchTerm)}
+          />
+        </div>
+        <div className="flex flex-wrap gap-3 justify-center w-full">
+          <select
+            className="bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm min-w-[180px]"
+            value={selectedGenre}
+            onChange={(e) => setSelectedGenre(e.target.value)}
+          >
+            <option value="">All genres</option>
+            {Object.entries(genreMap).map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <input
+            className="bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm w-[140px]"
+            type="number"
+            placeholder="Year"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            min="1888"
+            max={new Date().getFullYear()}
+          />
+          <button
+            className="bg-blue-600 text-white rounded-full px-4 py-2 shadow-sm hover:bg-blue-700"
+            onClick={() => getMovies(searchTerm)}
+          >
+            Apply filters
+          </button>
+        </div>
       </div>
       {error && <p className="text-center text-red-600 mt-4">{error}</p>}
       {loading && <p className="text-center mt-6">Loading...</p>}

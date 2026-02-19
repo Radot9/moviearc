@@ -15,6 +15,8 @@ export default {
     const id = url.searchParams.get("id");
     const popular = url.searchParams.get("popular") === "1";
     const genres = url.searchParams.get("genres") === "1";
+    const genre = url.searchParams.get("genre") || ""; // single genre id
+    const year = url.searchParams.get("year") || ""; // release year
 
     if (!env.TMDB_API_KEY) {
       return new Response("Server key missing", { status: 500, headers: corsHeaders });
@@ -25,6 +27,12 @@ export default {
       target = `https://api.themoviedb.org/3/movie/${id}?api_key=${env.TMDB_API_KEY}`;
     } else if (genres) {
       target = `https://api.themoviedb.org/3/genre/movie/list?api_key=${env.TMDB_API_KEY}`;
+    } else if (genre || year) {
+      // Use discover endpoint when filtering by genre or year.
+      const params = new URLSearchParams({ api_key: env.TMDB_API_KEY, sort_by: "popularity.desc" });
+      if (genre) params.set("with_genres", genre);
+      if (year) params.set("primary_release_year", year);
+      target = `https://api.themoviedb.org/3/discover/movie?${params.toString()}`;
     } else if (popular || !query) {
       // Default to popular titles when no query is provided.
       target = `https://api.themoviedb.org/3/movie/popular?api_key=${env.TMDB_API_KEY}`;
