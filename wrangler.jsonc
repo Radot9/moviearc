@@ -1,5 +1,5 @@
 {
-  "name": "moviearc-proxy",
+  "name": "moviearc",
   "main": "worker/index.js",
   "compatibility_date": "2026-02-18"
 }
