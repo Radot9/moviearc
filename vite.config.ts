@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/MovieArc/',
+  // Use repo name in lowercase to match GitHub Pages URL path.
+  base: '/moviearc/',
   plugins: [react()],
 })
