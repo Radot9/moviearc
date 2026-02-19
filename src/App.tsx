@@ -5,14 +5,11 @@ import SearchIcon from "./assets/Search.svg";
 import MovieCard, { type Movie } from "./MovieCard";
 import MovieDetails from "./MovieDetails.tsx";
 
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-const API_BASE = "https://api.themoviedb.org/3";
+const PROXY_BASE = import.meta.env.VITE_PROXY_BASE;
 
-const API_URL = `${API_BASE}/movie/popular?api_key=${API_KEY}`;
-
-const API_SEARCH = `${API_BASE}/search/movie?api_key=${API_KEY}`;
-
-const API_GENRES = `${API_BASE}/genre/movie/list?api_key=${API_KEY}`;
+const API_POPULAR = `${PROXY_BASE}?popular=1`;
+const API_SEARCH = `${PROXY_BASE}?query=`;
+const API_GENRES = `${PROXY_BASE}?genres=1`;
 
 // const movie = {
 //   genre_ids: [14, 28],
@@ -31,14 +28,17 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
 
   const getMovies = async (title: string) => {
-    if (!API_KEY) {
-      setError("API key missing. Add VITE_TMDB_API_KEY to your .env file.");
+    if (!PROXY_BASE) {
+      setError("Proxy URL missing. Set VITE_PROXY_BASE to your worker URL.");
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_URL}&query=${title}`);
+      const url = title.trim()
+        ? `${API_SEARCH}${encodeURIComponent(title)}`
+        : API_POPULAR;
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch movies");
       const data = await response.json();
       setMovies(data.results ?? []);
@@ -50,14 +50,14 @@ const Home = () => {
   };
 
   const searchMovies = async (title: string) => {
-    if (!API_KEY) {
-      setError("API key missing. Add VITE_TMDB_API_KEY to your .env file.");
+    if (!PROXY_BASE) {
+      setError("Proxy URL missing. Set VITE_PROXY_BASE to your worker URL.");
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_SEARCH}&query=${title}`);
+      const response = await fetch(`${API_SEARCH}${encodeURIComponent(title)}`);
       if (!response.ok) throw new Error("Failed to search movies");
       const data = await response.json();
       setMovies(data.results ?? []);
@@ -69,7 +69,7 @@ const Home = () => {
   };
 
   const fetchGenres = async () => {
-    if (!API_KEY) return;
+    if (!PROXY_BASE) return;
     const cached = localStorage.getItem("tmdb_genres");
     if (cached) {
       try {

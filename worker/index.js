@@ -13,17 +13,24 @@ export default {
     const url = new URL(request.url);
     const query = url.searchParams.get("query") || "";
     const id = url.searchParams.get("id");
+    const popular = url.searchParams.get("popular") === "1";
+    const genres = url.searchParams.get("genres") === "1";
 
     if (!env.TMDB_API_KEY) {
       return new Response("Server key missing", { status: 500, headers: corsHeaders });
     }
-    if (!query && !id) {
-      return new Response("query or id required", { status: 400, headers: corsHeaders });
-    }
 
-    const target = id
-      ? `https://api.themoviedb.org/3/movie/${id}?api_key=${env.TMDB_API_KEY}`
-      : `https://api.themoviedb.org/3/search/movie?api_key=${env.TMDB_API_KEY}&query=${encodeURIComponent(query)}`;
+    let target;
+    if (id) {
+      target = `https://api.themoviedb.org/3/movie/${id}?api_key=${env.TMDB_API_KEY}`;
+    } else if (genres) {
+      target = `https://api.themoviedb.org/3/genre/movie/list?api_key=${env.TMDB_API_KEY}`;
+    } else if (popular || !query) {
+      // Default to popular titles when no query is provided.
+      target = `https://api.themoviedb.org/3/movie/popular?api_key=${env.TMDB_API_KEY}`;
+    } else {
+      target = `https://api.themoviedb.org/3/search/movie?api_key=${env.TMDB_API_KEY}&query=${encodeURIComponent(query)}`;
+    }
 
     const tmdbRes = await fetch(target, { headers: { Accept: "application/json" } });
     if (!tmdbRes.ok) {

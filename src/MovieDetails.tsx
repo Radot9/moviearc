@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-const API_BASE = "https://api.themoviedb.org/3";
+const PROXY_BASE = import.meta.env.VITE_PROXY_BASE;
 const IMAGE_BASE = "https://image.tmdb.org/t/p";
 
 interface Genre {
@@ -36,14 +35,14 @@ const MovieDetails: React.FC = () => {
         setError("Missing movie id.");
         return;
       }
-      if (!API_KEY) {
-        setError("API key missing. Add VITE_TMDB_API_KEY to your .env file.");
+      if (!PROXY_BASE) {
+        setError("Proxy URL missing. Set VITE_PROXY_BASE to your worker URL.");
         return;
       }
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_BASE}/movie/${id}?api_key=${API_KEY}`);
+        const response = await fetch(`${PROXY_BASE}?id=${id}`);
         if (!response.ok) throw new Error("Failed to load movie details");
         const data = (await response.json()) as MovieDetailsResponse;
         setMovie(data);
